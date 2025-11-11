@@ -183,9 +183,9 @@
         <div id="titleScreen">
             <div class="leaves-container" id="titleLeaves"></div>
             <h1>TURKEY<br>HUNT</h1>
-            <h2 class="subtitle">Earn that Thanksgiving Bonus!</h2>
-            <button id="startBtn">CLICK TO START</button>
-            <p style="color: #FFF8DC; font-size: 10px; margin-top: 20px; text-shadow: 1px 1px 0px #8B4513;">© 2025 Neon Bread Studios</p>
+            <h2 class="subtitle">Earn that Thank$giving Bonu$!</h2>
+            <button id="startBtn">GIT 'EM!</button>
+            <p style="color: #FFF8DC; font-size: 9px; margin-top: 20px; text-shadow: 1px 1px 0px #8B4513;">© 2025 Neon Bread Studios. <br> Music by Nicholas Panek from Pixabay</p>
         </div>
         
         <!-- Game Canvas -->
@@ -199,9 +199,9 @@
         
         <!-- End Screen -->
         <div id="endScreen" class="hidden">
-            <h1>GAME OVER</h1>
-            <div id="endStats">You Earned: $0</div>
-            <button id="playAgainBtn">PLAY AGAIN</button>
+            <h1>BAG SECURED!</h1>
+            <div id="endStats">You Stacked: $0</div>
+            <button id="playAgainBtn">RUN IT BACK</button>
         </div>
     </div>
     
@@ -227,6 +227,8 @@
         const VISIBILITY_DECAY = 0.9;
         const EARNINGS_PER_HIT = 20;
         const TURKEY_COUNT_INCREASE = 0.25;
+let turkeysKilled = 0;
+let turkeyRiseSpeed = 0.05;
         
         // Sprite images as data URIs (embedded to avoid CORS)
         let bushImg, cloudImg, turkeyImg;
@@ -289,7 +291,7 @@
             </svg>`;
             
             bushImg = new Image();
-            bushImg.src = 'data:image/svg+xml;base64,' + btoa(bushSvg);
+            bushImg.src = 'https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/bush.png';
             
             // Cloud sprite
             const cloudSvg = `<svg width="80" height="40" xmlns="http://www.w3.org/2000/svg">
@@ -299,7 +301,7 @@
             </svg>`;
             
             cloudImg = new Image();
-            cloudImg.src = 'data:image/svg+xml;base64,' + btoa(cloudSvg);
+            cloudImg.src = 'https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/cloud.png';
             
             // Turkey sprite - 8-bit pixel art style
             const turkeySvg = `<svg width="50" height="60" xmlns="http://www.w3.org/2000/svg">
@@ -331,7 +333,7 @@
             </svg>`;
             
             turkeyImg = new Image();
-            turkeyImg.src = 'data:image/svg+xml;base64,' + btoa(turkeySvg);
+            turkeyImg.src = 'https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/turkey (1).png';
             
             // Wait for all images to load
             let loadCount = 0;
@@ -369,6 +371,10 @@
             }
             
             document.getElementById('titleScreen').classList.add('hidden');
+const bgMusic = new Audio('https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/energetic-chiptune-video-game-music-platformer-8-bit-318348.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.2;
+bgMusic.play();
             document.getElementById('hud').classList.remove('hidden');
             
             gameState = 'playing';
@@ -376,6 +382,7 @@
             timeRemaining = GAME_DURATION;
             activeTurkeyCount = 1;
             visibilityDuration = 5000;
+turkeysKilled = 0;
             turkeys = [];
             
             updateHUD();
@@ -422,7 +429,7 @@
                 state: 'rising', // rising, visible, hiding, hidden
                 riseProgress: 0,
                 visibleTime: 0,
-                riseSpeed: 0.05,
+                riseSpeed: turkeyRiseSpeed,
                 turkeyHeight: 60 * scale,
                 turkeyWidth: 50 * scale,
                 hit: false
@@ -514,22 +521,28 @@
         }
         
         function hitTurkey(turkey) {
-            turkey.hit = true;
-            totalEarnings += EARNINGS_PER_HIT;
-            
-            // Increase difficulty
-            activeTurkeyCount = Math.ceil(activeTurkeyCount * (1 + TURKEY_COUNT_INCREASE));
-            visibilityDuration = Math.max(MIN_VISIBILITY, visibilityDuration * VISIBILITY_DECAY);
-            
-            updateHUD();
-            
-            // Spawn new turkey immediately
-            setTimeout(() => {
-                if (gameState === 'playing') {
-                    spawnTurkey();
-                }
-            }, 100);
+    turkey.hit = true;
+    totalEarnings += EARNINGS_PER_HIT;
+turkeysKilled++;
+
+// Add 1 turkey for every 3 killed
+if (turkeysKilled % 3 === 0) {
+    activeTurkeyCount++;
+    spawnTurkey();
+}    
+    // Increase difficulty (speed only)
+    visibilityDuration = Math.max(650, visibilityDuration - 250);
+turkeyRiseSpeed = Math.min(0.2, turkeyRiseSpeed + 0.02);
+    
+    updateHUD();
+    
+    // Spawn new turkey immediately
+    setTimeout(() => {
+        if (gameState === 'playing') {
+            spawnTurkey();
         }
+    }, 100);
+}
         
         function updateHUD() {
             document.getElementById('earnings').textContent = `EARNINGS: $${totalEarnings}`;
@@ -680,40 +693,16 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
         function playHitSound() {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
-            oscillator.type = 'square';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.15);
-        }
+    const sound = new Audio('https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/gunshotjbudden.mp3');
+    sound.volume = 0.3;
+    sound.play();
+}
         
         function playGameOverSound() {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
-            oscillator.type = 'sawtooth';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
-        }
+    const sound = new Audio('https://raw.githubusercontent.com/LogicNerds/turkeyhuntbyneonbread/main/assets/chaching.mp3');
+    sound.volume = 0.3;
+    sound.play();
+}
         
         // Start the game
         window.addEventListener('load', init);
