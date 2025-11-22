@@ -221,7 +221,7 @@
         
         // Turkey management
         let turkeys = [];
-        let activeTurkeyCount = 1;
+        let activeTurkeyCount = 15;
         let visibilityDuration = 5000; // ms
         const MIN_VISIBILITY = 1000; // ms
         const VISIBILITY_DECAY = 0.9;
@@ -380,7 +380,7 @@ bgMusic.play();
             gameState = 'playing';
             totalEarnings = 0;
             timeRemaining = GAME_DURATION;
-            activeTurkeyCount = 1;
+            activeTurkeyCount = 15;
             visibilityDuration = 5000;
 turkeysKilled = 0;
             turkeys = [];
@@ -525,23 +525,21 @@ turkeysKilled = 0;
     totalEarnings += EARNINGS_PER_HIT;
 turkeysKilled++;
 
-// Add 1 turkey for every 3 killed
-if (turkeysKilled % 3 === 0) {
-    activeTurkeyCount++;
-    spawnTurkey();
-}    
     // Increase difficulty (speed only)
     visibilityDuration = Math.max(650, visibilityDuration - 250);
 turkeyRiseSpeed = Math.min(0.2, turkeyRiseSpeed + 0.02);
     
     updateHUD();
     
-    // Spawn new turkey immediately
-    setTimeout(() => {
-        if (gameState === 'playing') {
-            spawnTurkey();
-        }
-    }, 100);
+    // Only respawn every 2nd kill (thins the field over time)
+    // But always maintain a floor of 2 turkeys
+    if (turkeysKilled % 2 === 0 || turkeys.length < 2) {
+        setTimeout(() => {
+            if (gameState === 'playing') {
+                spawnTurkey();
+            }
+        }, 100);
+    }
 }
         
         function updateHUD() {
